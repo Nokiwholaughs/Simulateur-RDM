@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulateur RDM - Profilés et Matériaux</title>
+    <style>
+        :root {
+            --primary-color: #FF7F00; 
+            --bg-color: #1a1a1a; 
+            --card-bg: #2a2a2a; 
+            --text-color: #f0f0f0; 
+            --accent-green: #4caf50; 
+            --accent-red: #f44336; 
+            --grid-color: #444444; 
+            --dimension-line: #cccccc; 
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .main-container {
+            max-width: 1200px;
+            width: 100%;
+        }
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* --- Indicateurs de Statut Visuel --- */
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 1.2em;
+            color: var(--accent-green);
+        }
+        .status-cercle {
+            width: 15px;
+            height: 15px;
+            background-color: var(--accent-green);
+            border-radius: 50%;
+        }
+        #status-indicator-top {
+            justify-content: center;
+            margin-bottom: 20px;
+            background-color: var(--card-bg);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        #status-indicator-bottom {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background-color: transparent;
+        }
+
+        /* --- Sections Communes --- */
+        .controls-section, .results-section, .visual-preview-section {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+        
+        /* --- Grilles --- */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        h2, .section-title {
+            margin-top: 0;
+            color: #ccc;
+            grid-column: 1 / -1;
+        }
+        h2 { font-size: 1.4em; }
+        .section-title { font-size: 1.3em; margin-bottom: 10px; }
+
+        /* --- Contrôles --- */
+        .control-group { margin-bottom: 10px; }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--primary-color);
+        }
+        select {
+            width: 100%;
+            padding: 10px;
+            background-color: #333;
+            color: white;
+            border: 1px solid #555;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+        .value-display {
+            float: right;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        /* --- Résultats --- */
+        .result-item {
+            font-size: 1em;
+            background-color: #333;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 5px solid var(--primary-color);
+            display: flex;
+            justify-content: space-between;
+        }
+        .result-item.highlight {
+            border-left-color: var(--accent-red);
+            background-color: #4a2323;
+        }
+        .result-value {
+            font-weight: bold;
+            color: var(--dimension-line);
+        }
+        .highlight .result-value {
+            color: #ff9999;
+        }
+
+        /* --- SVG --- */
+        .visual-preview-section {
+            background-color: #0d0d0d;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            position: relative;
+        }
+        .svg-canvas {
+            width: 100%;
+            height: auto;
+            border: 1px solid var(--grid-color);
+        }
+        .grid-line {
+            stroke: var(--grid-color);
+            stroke-width: 0.5;
+        }
+        .dimension-label {
+            fill: var(--dimension-line);
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+        }
+        .dimension-line {
+            stroke: var(--dimension-line);
+            stroke-width: 1;
+        }
+
+        @media (max-width: 768px) {
+            .controls-grid, .results-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+    <h1>Simulateur RDM - Validation de Structure</h1>
+    
+    <div id="status-indicator-top" class="status-badge">
+        <div class="status-cercle"></div>
+        <span class="status-text">CONFORME</span>
+    </div>
+
+    <section class="controls-section">
+        <h2>Paramètres de Dimensionnement</h2>
+        <div class="controls-grid">
+            <div class="control-group">
+                <label for="section_type">Type de géométrie</label>
+                <select id="section_type" onchange="toggleSection(); calculate()">
+                    <option value="creuse">Tube Creux</option>
+                    <option value="pleine">Poutre Pleine</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="material">Matériau</label>
+                <select id="material" oninput="calculate()">
+                    <optgroup label="Métaux">
+                        <option value="alu6060">Alu 6060-T6 (E=79500 MPa, Rp0,2=140 MPa)</option>
+                        <option value="acier">Acier Standard (E=210000 MPa, Rp0,2=235 MPa)</option>
+                    </optgroup>
+                    <optgroup label="Bois">
+                        <option value="bois_c24">Bois Résineux C24 (E=11000 MPa, Rp0,2=24 MPa)</option>
+                        <option value="bois_gl24">Lamellé-Collé GL24 (E=11500 MPa, Rp0,2=24 MPa)</option>
+                        <option value="bois_d30">Bois Dur / Chêne D30 (E=12000 MPa, Rp0,2=30 MPa)</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Longueur poutre (L) : <span id="val_L" class="value-display">2500 mm</span></label>
+                <input type="range" id="L" min="500" max="6000" step="100" value="2500" oninput="updateVal('L'); calculate()">
+            </div>
+
+            <div class="control-group">
+                <label>Largeur (B) : <span id="val_B" class="value-display">80 mm</span></label>
+                <input type="range" id="B" min="20" max="300" step="1" value="80" oninput="updateVal('B'); calculate()">
+            </div>
+
+            <div class="control-group">
+                <label>Hauteur (H) : <span id="val_H" class="value-display">80 mm</span></label>
+                <input type="range" id="H" min="20" max="300" step="1" value="80" oninput="updateVal('H'); calculate()">
+            </div>
+
+            <div class="control-group" id="group_Ep">
+                <label>Épaisseur (Ep) : <span id="val_Ep" class="value-display">2 mm</span></label>
+                <input type="range" id="Ep" min="1" max="20" step="0.5" value="2" oninput="updateVal('Ep'); calculate()">
+            </div>
+
+            <div class="control-group">
+                <label>Charge appliquée (P) : <span id="val_P" class="value-display">3000 N</span></label>
+                <input type="range" id="P" min="100" max="50000" step="100" value="3000" oninput="updateVal('P'); calculate()">
+            </div>
+        </div>
+    </section>
+
+    <section class="results-section">
+        <h2>Note de Calcul Complète</h2>
+        <div class="results-grid">
+            <div class="result-item"><span>Module de Young (E) :</span> <span id="out_E" class="result-value">0</span> MPa</div>
+            <div class="result-item"><span>Résistance limite :</span> <span id="out_Re" class="result-value">0</span> MPa</div>
+            <div class="result-item"><span>Section (S) :</span> <span id="out_S" class="result-value">0</span> mm²</div>
+            <div class="result-item"><span>Inertie (Ix) :</span> <span id="out_Ix" class="result-value">0</span> mm⁴</div>
+            <div class="result-item"><span>Module (Wx) :</span> <span id="out_Wx" class="result-value">0</span> mm³</div>
+            
+            <div class="result-item"><span>Moment fléchissant (Mf) :</span> <span id="out_Mf" class="result-value">0</span> N.mm</div>
+            <div class="result-item"><span>Effort tranchant (T) :</span> <span id="out_T" class="result-value">0</span> N</div>
+            <div class="result-item"><span>Flèche max (f) :</span> <span id="out_f" class="result-value">0</span> mm</div>
+            
+            <div class="result-item"><span>Contrainte flexion (&sigma;f) :</span> <span id="out_sigmaf" class="result-value">0</span> MPa</div>
+            <div class="result-item"><span>Contrainte cisaillement (&tau;c) :</span> <span id="out_tauc" class="result-value">0</span> MPa</div>
+            <div class="result-item"><span>Contrainte composée (&tau;) :</span> <span id="out_tau_max" class="result-value">0</span> MPa</div>
+            
+            <div class="result-item highlight" style="grid-column: 1 / -1; justify-content: center; gap: 15px;">
+                <span>Vérification (Contrainte maxi < Admissible) :</span> 
+                <span id="out_conclusion" class="result-value">0 MPa < 0 MPa => SATISFAISANT</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="visual-preview-section">
+        <div>
+            <h3 class="section-title">Schéma cinématique & Déformée</h3>
+            <svg id="svg-beam" viewBox="0 0 1000 300" class="svg-canvas" preserveAspectRatio="xMidYMid meet">
+                <defs>
+                    <pattern id="gridPattern" width="50" height="50" patternUnits="userSpaceOnUse">
+                        <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#444" stroke-width="0.5"/>
+                    </pattern>
+                </defs>
+                <rect width="1000" height="300" fill="url(#gridPattern)" />
+                <polygon points="100,180 120,210 80,210" fill="#333" stroke="var(--dimension-line)" stroke-width="2"/>
+                <polygon points="900,180 920,210 880,210" fill="#333" stroke="var(--dimension-line)" stroke-width="2"/>
+                <line x1="100" y1="180" x2="900" y2="180" stroke="#444" stroke-width="2" stroke-dasharray="5,5"/>
+                
+                <path id="beam-deformed" d="M 100,180 Q 500,180 900,180" fill="none" stroke="#4caf50" stroke-width="6"/>
+                
+                <line id="force-line" x1="500" y1="100" x2="500" y2="165" stroke="var(--accent-red)" stroke-width="3"/>
+                <polygon id="force-arrow" points="495,160 500,175 505,160" fill="var(--accent-red)"/>
+                <text id="label-force" x="515" y="140" fill="white" font-weight="bold" font-size="16px">P = 3000 N</text>
+
+                <line x1="110" y1="230" x2="110" y2="250" stroke="var(--dimension-line)" stroke-width="1"/>
+                <line x1="890" y1="230" x2="890" y2="250" stroke="var(--dimension-line)" stroke-width="1"/>
+                <line x1="110" y1="240" x2="890" y2="240" stroke="var(--dimension-line)" stroke-width="1"/>
+                <text id="label-length" x="500" y="255" text-anchor="middle" class="dimension-label">L = 2500 mm</text>
+            </svg>
+        </div>
+
+        <div>
+            <h3 class="section-title">Section transversale</h3>
+            <svg id="svg-section" viewBox="0 0 500 400" class="svg-canvas" preserveAspectRatio="xMidYMid meet">
+                <rect width="500" height="400" fill="url(#gridPattern)" />
+                <defs>
+                    <marker id="arrow-end" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto">
+                        <path d="M0,0 L10,5 L0,10 Z" fill="var(--dimension-line)"/>
+                    </marker>
+                    <marker id="arrow-start" markerWidth="10" markerHeight="10" refX="0" refY="5" orient="auto">
+                        <path d="M10,0 L0,5 L10,10 Z" fill="var(--dimension-line)"/>
+                    </marker>
+                </defs>
+
+                <g id="section-group" transform="translate(250, 200)">
+                    <rect id="rect-ext" x="-40" y="-40" width="80" height="80" fill="#555" stroke="#fff" stroke-width="1"/>
+                    <rect id="rect-int" x="-38" y="-38" width="76" height="76" fill="#1a1a1a" stroke="#fff" stroke-width="1" stroke-dasharray="2,2"/>
+                    
+                    <line id="line-B-h" x1="-40" y1="-50" x2="-40" y2="-80" class="dimension-line"/>
+                    <line id="line-B-d" x1="40" y1="-50" x2="40" y2="-80" class="dimension-line"/>
+                    <line id="line-B" x1="-40" y1="-70" x2="40" y2="-70" class="dimension-line" marker-start="url(#arrow-start)" marker-end="url(#arrow-end)"/>
+                    <text id="label-B" x="0" y="-85" text-anchor="middle" class="dimension-label">B = 80 mm</text>
+                    
+                    <line id="line-H-h" x1="50" y1="-40" x2="80" y2="-40" class="dimension-line"/>
+                    <line id="line-H-b" x1="50" y1="40" x2="80" y2="40" class="dimension-line"/>
+                    <line id="line-H" x1="70" y1="-40" x2="70" y2="40" class="dimension-line" marker-start="url(#arrow-start)" marker-end="url(#arrow-end)"/>
+                    <text id="label-H" x="90" y="0" dominant-baseline="middle" class="dimension-label">H = 80 mm</text>
+                    
+                    <line id="neutral-axis" x1="-150" y1="0" x2="150" y2="0" stroke="var(--dimension-line)" stroke-width="1" stroke-dasharray="8,8"/>
+                </g>
+            </svg>
+        </div>
+
+        <div id="status-indicator-bottom" class="status-badge">
+            <div class="status-cercle"></div>
+            <span class="status-text">CONFORME</span>
+        </div>
+    </section>
+</div>
+
+<script>
+    // Ajout des matériaux bois
+    const materials = {
+        alu6060: { E: 79500, Re: 140 },
+        acier: { E: 210000, Re: 235 },
+        bois_c24: { E: 11000, Re: 24 },
+        bois_gl24: { E: 11500, Re: 24 },
+        bois_d30: { E: 12000, Re: 30 }
+    };
+
+    function updateVal(id) {
+        let suffix = (id === 'P') ? ' N' : ' mm';
+        document.getElementById('val_' + id).innerText = document.getElementById(id).value + suffix;
+    }
+
+    // Gère l'affichage du champ Épaisseur en fonction du type de géométrie
+    function toggleSection() {
+        let type = document.getElementById('section_type').value;
+        let groupEp = document.getElementById('group_Ep');
+        let rectInt = document.getElementById('rect-int');
+        
+        if (type === 'pleine') {
+            groupEp.style.display = 'none';
+            rectInt.style.display = 'none';
+        } else {
+            groupEp.style.display = 'block';
+            rectInt.style.display = 'block';
+        }
+    }
+
+    function calculate() {
+        let mat = document.getElementById('material').value;
+        let E = materials[mat].E;
+        let Re = materials[mat].Re;
+
+        let typeSection = document.getElementById('section_type').value;
+        let L = parseFloat(document.getElementById('L').value);
+        let B = parseFloat(document.getElementById('B').value);
+        let H = parseFloat(document.getElementById('H').value);
+        let Ep = parseFloat(document.getElementById('Ep').value);
+        let P = parseFloat(document.getElementById('P').value);
+
+        let b, h;
+
+        // Logique géométrique : si pleine, le vide intérieur est de 0x0
+        if (typeSection === 'pleine') {
+            b = 0;
+            h = 0;
+        } else {
+            // Protection pour ne pas avoir une épaisseur absurde
+            if (Ep >= B/2) Ep = (B/2) - 0.1;
+            if (Ep >= H/2) Ep = (H/2) - 0.1;
+            b = B - (2 * Ep);
+            h = H - (2 * Ep);
+        }
+
+        let S = (B * H) - (b * h);
+        let Ix = (B * Math.pow(H, 3) - b * Math.pow(h, 3)) / 12;
+        let Wx = (B * Math.pow(H, 3) - b * Math.pow(h, 3)) / (6 * H);
+        let Mf = (P * L) / 4;
+        let sigma_f = Mf / Wx;
+        let fleche = (P * Math.pow(L, 3)) / (48 * E * Ix);
+        let T = P / 2;
+        let tau_c = (3 * P) / (2 * S);
+        let tau_max = 0.35 * sigma_f + 0.65 * Math.sqrt(Math.pow(sigma_f, 2) + 4 * Math.pow(tau_c, 2));
+
+        // Affichage des valeurs
+        document.getElementById('out_E').innerText = E;
+        document.getElementById('out_Re').innerText = Re;
+        document.getElementById('out_S').innerText = Math.round(S);
+        document.getElementById('out_Ix').innerText = Math.round(Ix);
+        document.getElementById('out_Wx').innerText = Math.round(Wx);
+        document.getElementById('out_Mf').innerText = Math.round(Mf);
+        document.getElementById('out_T').innerText = Math.round(T);
+        document.getElementById('out_f').innerText = fleche.toFixed(2);
+        document.getElementById('out_sigmaf').innerText = sigma_f.toFixed(2);
+        document.getElementById('out_tauc').innerText = tau_c.toFixed(2);
+        document.getElementById('out_tau_max').innerText = tau_max.toFixed(2);
+
+        // Validation et Statut
+        let conclusionText = document.getElementById('out_conclusion');
+        let badges = document.querySelectorAll('.status-badge');
+        
+        if (tau_max <= Re) {
+            conclusionText.innerText = `${tau_max.toFixed(2)} MPa < ${Re} MPa => SATISFAISANT`;
+            conclusionText.parentElement.style.borderLeftColor = "var(--accent-green)";
+            conclusionText.parentElement.style.backgroundColor = "#234a26";
+            conclusionText.style.color = "#99ff99";
+            
+            badges.forEach(badge => {
+                badge.querySelector('.status-text').innerText = "CONFORME";
+                badge.style.color = "var(--accent-green)";
+                badge.querySelector('.status-cercle').style.backgroundColor = "var(--accent-green)";
+            });
+        } else {
+            conclusionText.innerText = `${tau_max.toFixed(2)} MPa > ${Re} MPa => DANGER RUPTURE`;
+            conclusionText.parentElement.style.borderLeftColor = "var(--accent-red)";
+            conclusionText.parentElement.style.backgroundColor = "#4a2323";
+            conclusionText.style.color = "#ff9999";
+
+            badges.forEach(badge => {
+                badge.querySelector('.status-text').innerText = "NON CONFORME - Risque !";
+                badge.style.color = "var(--accent-red)";
+                badge.querySelector('.status-cercle').style.backgroundColor = "var(--accent-red)";
+            });
+        }
+
+        // --- Mise à jour des schémas SVG ---
+        document.getElementById('label-force').textContent = `P = ${P} N`;
+        document.getElementById('label-length').textContent = `L = ${L} mm`;
+        
+        let f_vis = fleche * 2.0; 
+        if (f_vis > 80) f_vis = 80;
+        if (f_vis < 0) f_vis = 0;
+        let yOrigin = 180;
+        
+        document.getElementById('beam-deformed').setAttribute('d', `M 100,${yOrigin} Q 500,${yOrigin + f_vis} 900,${yOrigin}`);
+        
+        let yTip = yOrigin + f_vis - 5;
+        document.getElementById('force-line').setAttribute('y2', yTip - 10);
+        document.getElementById('force-arrow').setAttribute('points', `${495},${yTip - 15} 500,${yTip} 505,${yTip - 15}`);
+        let labelY = yTip - 20;
+        if (labelY < 10) labelY = 20;
+        document.getElementById('label-force').setAttribute('y', labelY);
+
+        document.getElementById('label-B').textContent = `B = ${B} mm`;
+        document.getElementById('label-H').textContent = `H = ${H} mm`;
+
+        let scaleFactor = 300 / 300; 
+        
+        document.getElementById('rect-ext').setAttribute('width', B * scaleFactor);
+        document.getElementById('rect-ext').setAttribute('height', H * scaleFactor);
+        document.getElementById('rect-ext').setAttribute('x', (-B/2) * scaleFactor);
+        document.getElementById('rect-ext').setAttribute('y', (-H/2) * scaleFactor);
+
+        if (typeSection !== 'pleine') {
+            document.getElementById('rect-int').setAttribute('width', b * scaleFactor);
+            document.getElementById('rect-int').setAttribute('height', h * scaleFactor);
+            document.getElementById('rect-int').setAttribute('x', (-b/2) * scaleFactor);
+            document.getElementById('rect-int').setAttribute('y', (-h/2) * scaleFactor);
+        }
+
+        let BVisHalf = (B/2) * scaleFactor;
+        let BVisTopY = (-H/2) * scaleFactor;
+        
+        document.getElementById('line-B-h').setAttribute('x1', -BVisHalf);
+        document.getElementById('line-B-h').setAttribute('x2', -BVisHalf);
+        document.getElementById('line-B-h').setAttribute('y1', BVisTopY - 5);
+        document.getElementById('line-B-h').setAttribute('y2', BVisTopY - 35);
+        
+        document.getElementById('line-B-d').setAttribute('x1', BVisHalf);
+        document.getElementById('line-B-d').setAttribute('x2', BVisHalf);
+        document.getElementById('line-B-d').setAttribute('y1', BVisTopY - 5);
+        document.getElementById('line-B-d').setAttribute('y2', BVisTopY - 35);
+        
+        document.getElementById('line-B').setAttribute('x1', -BVisHalf);
+        document.getElementById('line-B').setAttribute('x2', BVisHalf);
+        document.getElementById('line-B').setAttribute('y1', BVisTopY - 20);
+        document.getElementById('line-B').setAttribute('y2', BVisTopY - 20);
+        
+        document.getElementById('label-B').setAttribute('y', BVisTopY - 40);
+
+        let HVisHalf = (H/2) * scaleFactor;
+        let HVisRightX = BVisHalf + 10;
+        
+        document.getElementById('line-H-h').setAttribute('x1', HVisRightX - 5);
+        document.getElementById('line-H-h').setAttribute('x2', HVisRightX + 35);
+        document.getElementById('line-H-h').setAttribute('y1', -HVisHalf);
+        document.getElementById('line-H-h').setAttribute('y2', -HVisHalf);
+        
+        document.getElementById('line-H-b').setAttribute('x1', HVisRightX - 5);
+        document.getElementById('line-H-b').setAttribute('x2', HVisRightX + 35);
+        document.getElementById('line-H-b').setAttribute('y1', HVisHalf);
+        document.getElementById('line-H-b').setAttribute('y2', HVisHalf);
+        
+        document.getElementById('line-H').setAttribute('x1', HVisRightX + 20);
+        document.getElementById('line-H').setAttribute('x2', HVisRightX + 20);
+        document.getElementById('line-H').setAttribute('y1', -HVisHalf);
+        document.getElementById('line-H').setAttribute('y2', HVisHalf);
+        
+        document.getElementById('label-H').setAttribute('x', HVisRightX + 45);
+    }
+
+    // Initialisation
+    toggleSection();
+    calculate();
+</script>
+<p>Created by Teddy Chouvet</p>
+</body>
+</html>
