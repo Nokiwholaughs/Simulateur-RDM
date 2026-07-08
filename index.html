@@ -117,10 +117,37 @@
             border-radius: 5px;
             font-size: 1em;
         }
+        
+        /* --- Champs de saisie numériques interactifs --- */
         .value-display {
             float: right;
             color: var(--primary-color);
+        }
+        .num-input {
+            background-color: #333;
+            color: var(--primary-color);
+            border: 1px solid #555;
+            border-radius: 4px;
+            padding: 2px 6px;
+            width: 70px;
             font-weight: bold;
+            font-size: 1em;
+            text-align: right;
+            font-family: inherit;
+        }
+        .num-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 5px rgba(255, 127, 0, 0.5);
+        }
+        /* Masquer les flèches du champ number pour un rendu plus propre */
+        .num-input::-webkit-outer-spin-button,
+        .num-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .num-input[type=number] {
+            -moz-appearance: textfield;
         }
 
         /* --- Résultats --- */
@@ -132,6 +159,7 @@
             border-left: 5px solid var(--primary-color);
             display: flex;
             justify-content: space-between;
+            align-items: center;
         }
         .result-item.highlight {
             border-left-color: var(--accent-red);
@@ -144,16 +172,18 @@
         .highlight .result-value {
             color: #ff9999;
         }
+
         /* --- Style spécifique pour la Flèche --- */
         .result-item.fleche-box {
-            background-color: #1e3a5f; /* Fond bleu profond */
-            border-left-color: #3b82f6; /* Bordure bleu vif */
-            text-transform: uppercase; /* Force le texte en majuscules */
-            letter-spacing: 1px; /* Espacement pour plus de lisibilité */
+            background-color: #1e3a5f; 
+            border-left-color: #3b82f6; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
         }
         .result-item.fleche-box .result-value {
-            color: #93c5fd; /* Chiffre en bleu clair pour contraster */
+            color: #93c5fd; 
         }
+
         /* --- SVG --- */
         .visual-preview-section {
             background-color: #0d0d0d;
@@ -223,28 +253,48 @@
             </div>
 
             <div class="control-group">
-                <label>Longueur poutre (L) : <span id="val_L" class="value-display">2500 mm</span></label>
-                <input type="range" id="L" min="500" max="6000" step="100" value="2500" oninput="updateVal('L'); calculate()">
+                <label>Longueur poutre (L) : 
+                    <span class="value-display">
+                        <input type="number" id="num_L" class="num-input" value="2500" oninput="sync('num', 'L'); calculate()"> mm
+                    </span>
+                </label>
+                <input type="range" id="L" min="500" max="6000" step="10" value="2500" oninput="sync('range', 'L'); calculate()">
             </div>
 
             <div class="control-group">
-                <label>Largeur (B) : <span id="val_B" class="value-display">80 mm</span></label>
-                <input type="range" id="B" min="20" max="300" step="1" value="80" oninput="updateVal('B'); calculate()">
+                <label>Largeur (B) : 
+                    <span class="value-display">
+                        <input type="number" id="num_B" class="num-input" value="80" oninput="sync('num', 'B'); calculate()"> mm
+                    </span>
+                </label>
+                <input type="range" id="B" min="20" max="300" step="1" value="80" oninput="sync('range', 'B'); calculate()">
             </div>
 
             <div class="control-group">
-                <label>Hauteur (H) : <span id="val_H" class="value-display">80 mm</span></label>
-                <input type="range" id="H" min="20" max="300" step="1" value="80" oninput="updateVal('H'); calculate()">
+                <label>Hauteur (H) : 
+                    <span class="value-display">
+                        <input type="number" id="num_H" class="num-input" value="80" oninput="sync('num', 'H'); calculate()"> mm
+                    </span>
+                </label>
+                <input type="range" id="H" min="20" max="300" step="1" value="80" oninput="sync('range', 'H'); calculate()">
             </div>
 
             <div class="control-group" id="group_Ep">
-                <label>Épaisseur (Ep) : <span id="val_Ep" class="value-display">2 mm</span></label>
-                <input type="range" id="Ep" min="1" max="20" step="0.5" value="2" oninput="updateVal('Ep'); calculate()">
+                <label>Épaisseur (Ep) : 
+                    <span class="value-display">
+                        <input type="number" id="num_Ep" class="num-input" value="2" step="0.5" oninput="sync('num', 'Ep'); calculate()"> mm
+                    </span>
+                </label>
+                <input type="range" id="Ep" min="1" max="20" step="0.5" value="2" oninput="sync('range', 'Ep'); calculate()">
             </div>
 
             <div class="control-group">
-                <label>Charge appliquée (P) : <span id="val_P" class="value-display">3000 N</span></label>
-                <input type="range" id="P" min="100" max="50000" step="100" value="3000" oninput="updateVal('P'); calculate()">
+                <label>Charge appliquée (P) : 
+                    <span class="value-display">
+                        <input type="number" id="num_P" class="num-input" value="3000" oninput="sync('num', 'P'); calculate()"> N
+                    </span>
+                </label>
+                <input type="range" id="P" min="100" max="50000" step="100" value="3000" oninput="sync('range', 'P'); calculate()">
             </div>
         </div>
     </section>
@@ -252,19 +302,20 @@
     <section class="results-section">
         <h2>Note de Calcul Complète</h2>
         <div class="results-grid">
-            <div class="result-item"><span>Module de Young (E) :</span> <span id="out_E" class="result-value">0</span> MPa</div>
-            <div class="result-item"><span>Résistance limite :</span> <span id="out_Re" class="result-value">0</span> MPa</div>
-            <div class="result-item"><span>Section (S) :</span> <span id="out_S" class="result-value">0</span> mm²</div>
-            <div class="result-item"><span>Inertie (Ix) :</span> <span id="out_Ix" class="result-value">0</span> mm⁴</div>
-            <div class="result-item"><span>Module (Wx) :</span> <span id="out_Wx" class="result-value">0</span> mm³</div>
+            <div class="result-item"><span>Module de Young (E) :</span> <span id="out_E" class="result-value">0</span></div>
+            <div class="result-item"><span>Résistance limite :</span> <span id="out_Re" class="result-value">0</span></div>
+            <div class="result-item"><span>Section (S) :</span> <span id="out_S" class="result-value">0</span></div>
+            <div class="result-item"><span>Inertie (Ix) :</span> <span id="out_Ix" class="result-value">0</span></div>
+            <div class="result-item"><span>Module (Wx) :</span> <span id="out_Wx" class="result-value">0</span></div>
             
-            <div class="result-item"><span>Moment fléchissant (Mf) :</span> <span id="out_Mf" class="result-value">0</span> N.mm</div>
-            <div class="result-item"><span>Effort tranchant (T) :</span> <span id="out_T" class="result-value">0</span> N</div>
-            <div class="result-item fleche-box"><span>Flèche max (f) :</span> <span id="out_f" class="result-value">0</span> mm</div>
+            <div class="result-item"><span>Moment fléchissant (Mf) :</span> <span id="out_Mf" class="result-value">0</span></div>
+            <div class="result-item"><span>Effort tranchant (T) :</span> <span id="out_T" class="result-value">0</span></div>
             
-            <div class="result-item"><span>Contrainte flexion (&sigma;f) :</span> <span id="out_sigmaf" class="result-value">0</span> MPa</div>
-            <div class="result-item"><span>Contrainte cisaillement (&tau;c) :</span> <span id="out_tauc" class="result-value">0</span> MPa</div>
-            <div class="result-item"><span>Contrainte composée (&tau;) :</span> <span id="out_tau_max" class="result-value">0</span> MPa</div>
+            <div class="result-item fleche-box"><span>Flèche max (f) :</span> <div><span id="out_f" class="result-value">0</span> mm</div></div>
+            
+            <div class="result-item"><span>Contrainte flexion (&sigma;f) :</span> <span id="out_sigmaf" class="result-value">0</span></div>
+            <div class="result-item"><span>Contrainte cisaillement (&tau;c) :</span> <span id="out_tauc" class="result-value">0</span></div>
+            <div class="result-item"><span>Contrainte composée (&tau;) :</span> <span id="out_tau_max" class="result-value">0</span></div>
             
             <div class="result-item highlight" style="grid-column: 1 / -1; justify-content: center; gap: 15px;">
                 <span>Vérification (Contrainte maxi < Admissible) :</span> 
@@ -340,7 +391,6 @@
 </div>
 
 <script>
-    // Ajout des matériaux bois
     const materials = {
         alu6060: { E: 79500, Re: 140 },
         acier: { E: 210000, Re: 235 },
@@ -349,28 +399,32 @@
         bois_d30: { E: 12000, Re: 30 }
     };
 
-    function updateVal(id) {
-        let suffix = (id === 'P') ? ' N' : ' mm';
-        document.getElementById('val_' + id).innerText = document.getElementById(id).value + suffix;
+    // Synchronisation bidirectionnelle entre le champ numérique et le curseur
+    function sync(source, id) {
+        let range = document.getElementById(id);
+        let num = document.getElementById('num_' + id);
+        
+        if (source === 'range') {
+            num.value = range.value;
+        } else if (source === 'num') {
+            range.value = num.value;
+        }
     }
-    // Verrouille ou déverrouille le type de section selon le matériau
+
     function checkMaterialRestrictions() {
         let mat = document.getElementById('material').value;
         let sectionTypeMenu = document.getElementById('section_type');
         
-        // Si le matériau choisi contient le mot "bois"
         if (mat.includes('bois')) {
-            sectionTypeMenu.value = 'pleine'; // Force le réglage sur "pleine"
-            sectionTypeMenu.disabled = true;  // Grise et verrouille le menu
+            sectionTypeMenu.value = 'pleine'; 
+            sectionTypeMenu.disabled = true;  
         } else {
-            sectionTypeMenu.disabled = false; // Déverrouille le menu pour les métaux
+            sectionTypeMenu.disabled = false; 
         }
         
-        // Met à jour l'affichage pour masquer l'épaisseur instantanément
         toggleSection();
     }
-    
-    // Gère l'affichage du champ Épaisseur en fonction du type de géométrie
+
     function toggleSection() {
         let type = document.getElementById('section_type').value;
         let groupEp = document.getElementById('group_Ep');
@@ -389,22 +443,21 @@
         let mat = document.getElementById('material').value;
         let E = materials[mat].E;
         let Re = materials[mat].Re;
-
         let typeSection = document.getElementById('section_type').value;
-        let L = parseFloat(document.getElementById('L').value);
-        let B = parseFloat(document.getElementById('B').value);
-        let H = parseFloat(document.getElementById('H').value);
-        let Ep = parseFloat(document.getElementById('Ep').value);
-        let P = parseFloat(document.getElementById('P').value);
+
+        // Lecture des valeurs depuis les champs de saisie (avec protection en cas de case vidée)
+        let L = parseFloat(document.getElementById('num_L').value) || 0.1;
+        let B = parseFloat(document.getElementById('num_B').value) || 0.1;
+        let H = parseFloat(document.getElementById('num_H').value) || 0.1;
+        let Ep = parseFloat(document.getElementById('num_Ep').value) || 0.1;
+        let P = parseFloat(document.getElementById('num_P').value) || 0.1;
 
         let b, h;
 
-        // Logique géométrique : si pleine, le vide intérieur est de 0x0
         if (typeSection === 'pleine') {
             b = 0;
             h = 0;
         } else {
-            // Protection pour ne pas avoir une épaisseur absurde
             if (Ep >= B/2) Ep = (B/2) - 0.1;
             if (Ep >= H/2) Ep = (H/2) - 0.1;
             b = B - (2 * Ep);
@@ -421,20 +474,19 @@
         let tau_c = (3 * P) / (2 * S);
         let tau_max = 0.35 * sigma_f + 0.65 * Math.sqrt(Math.pow(sigma_f, 2) + 4 * Math.pow(tau_c, 2));
 
-        // Affichage des valeurs
-        document.getElementById('out_E').innerText = E;
-        document.getElementById('out_Re').innerText = Re;
-        document.getElementById('out_S').innerText = Math.round(S);
-        document.getElementById('out_Ix').innerText = Math.round(Ix);
-        document.getElementById('out_Wx').innerText = Math.round(Wx);
-        document.getElementById('out_Mf').innerText = Math.round(Mf);
-        document.getElementById('out_T').innerText = Math.round(T);
+        // Affichage (arrondis et unités)
+        document.getElementById('out_E').innerText = E + " MPa";
+        document.getElementById('out_Re').innerText = Re + " MPa";
+        document.getElementById('out_S').innerText = Math.round(S) + " mm²";
+        document.getElementById('out_Ix').innerText = Math.round(Ix) + " mm⁴";
+        document.getElementById('out_Wx').innerText = Math.round(Wx) + " mm³";
+        document.getElementById('out_Mf').innerText = Math.round(Mf) + " N.mm";
+        document.getElementById('out_T').innerText = Math.round(T) + " N";
         document.getElementById('out_f').innerText = fleche.toFixed(2);
-        document.getElementById('out_sigmaf').innerText = sigma_f.toFixed(2);
-        document.getElementById('out_tauc').innerText = tau_c.toFixed(2);
-        document.getElementById('out_tau_max').innerText = tau_max.toFixed(2);
+        document.getElementById('out_sigmaf').innerText = sigma_f.toFixed(2) + " MPa";
+        document.getElementById('out_tauc').innerText = tau_c.toFixed(2) + " MPa";
+        document.getElementById('out_tau_max').innerText = tau_max.toFixed(2) + " MPa";
 
-        // Validation et Statut
         let conclusionText = document.getElementById('out_conclusion');
         let badges = document.querySelectorAll('.status-badge');
         
@@ -462,7 +514,7 @@
             });
         }
 
-        // --- Mise à jour des schémas SVG ---
+        // --- Mise à jour SVG ---
         document.getElementById('label-force').textContent = `P = ${P} N`;
         document.getElementById('label-length').textContent = `L = ${L} mm`;
         
@@ -538,10 +590,10 @@
         document.getElementById('label-H').setAttribute('x', HVisRightX + 45);
     }
 
-    // Initialisation au chargement de la page
+    // Initialisation
     checkMaterialRestrictions();
     calculate();
 </script>
-<p>Created by Teddy Chouvet</p>
+
 </body>
 </html>
