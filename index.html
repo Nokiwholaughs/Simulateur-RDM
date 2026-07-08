@@ -144,7 +144,16 @@
         .highlight .result-value {
             color: #ff9999;
         }
-
+        /* --- Style spécifique pour la Flèche --- */
+        .result-item.fleche-box {
+            background-color: #1e3a5f; /* Fond bleu profond */
+            border-left-color: #3b82f6; /* Bordure bleu vif */
+            text-transform: uppercase; /* Force le texte en majuscules */
+            letter-spacing: 1px; /* Espacement pour plus de lisibilité */
+        }
+        .result-item.fleche-box .result-value {
+            color: #93c5fd; /* Chiffre en bleu clair pour contraster */
+        }
         /* --- SVG --- */
         .visual-preview-section {
             background-color: #0d0d0d;
@@ -251,7 +260,7 @@
             
             <div class="result-item"><span>Moment fléchissant (Mf) :</span> <span id="out_Mf" class="result-value">0</span> N.mm</div>
             <div class="result-item"><span>Effort tranchant (T) :</span> <span id="out_T" class="result-value">0</span> N</div>
-            <div class="result-item"><span>FLECHE MAX (f) :</span> <span id="out_f" class="result-value">0</span> mm</div>
+            <div class="result-item fleche-box"><span>Flèche max (f) :</span> <span id="out_f" class="result-value">0</span> mm</div>
             
             <div class="result-item"><span>Contrainte flexion (&sigma;f) :</span> <span id="out_sigmaf" class="result-value">0</span> MPa</div>
             <div class="result-item"><span>Contrainte cisaillement (&tau;c) :</span> <span id="out_tauc" class="result-value">0</span> MPa</div>
