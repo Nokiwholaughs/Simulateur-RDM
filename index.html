@@ -37,7 +37,6 @@
             margin-bottom: 20px;
         }
 
-        /* --- Indicateurs de Statut Visuel --- */
         .status-badge {
             display: flex;
             align-items: center;
@@ -67,7 +66,6 @@
             background-color: transparent;
         }
 
-        /* --- Sections Communes --- */
         .controls-section, .results-section, .visual-preview-section {
             background-color: var(--card-bg);
             padding: 20px;
@@ -76,7 +74,6 @@
             margin-bottom: 20px;
         }
         
-        /* --- Grilles --- */
         .controls-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -96,7 +93,6 @@
         h2 { font-size: 1.4em; }
         .section-title { font-size: 1.3em; margin-bottom: 10px; }
 
-        /* --- Contrôles --- */
         .control-group { margin-bottom: 10px; }
         label {
             font-weight: bold;
@@ -118,7 +114,6 @@
             font-size: 1em;
         }
         
-        /* --- Champs de saisie numériques interactifs --- */
         .value-display {
             float: right;
             color: var(--primary-color);
@@ -128,7 +123,7 @@
             color: var(--primary-color);
             border: 1px solid #555;
             border-radius: 4px;
-            padding: 2px 6px;
+            padding: 4px 8px;
             width: 70px;
             font-weight: bold;
             font-size: 1em;
@@ -140,7 +135,6 @@
             border-color: var(--primary-color);
             box-shadow: 0 0 5px rgba(255, 127, 0, 0.5);
         }
-        /* Masquer les flèches du champ number pour un rendu plus propre */
         .num-input::-webkit-outer-spin-button,
         .num-input::-webkit-inner-spin-button {
             -webkit-appearance: none;
@@ -150,7 +144,6 @@
             -moz-appearance: textfield;
         }
 
-        /* --- Résultats --- */
         .result-item {
             font-size: 1em;
             background-color: #333;
@@ -173,7 +166,6 @@
             color: #ff9999;
         }
 
-        /* --- Style spécifique pour la Flèche --- */
         .result-item.fleche-box {
             background-color: #1e3a5f; 
             border-left-color: #3b82f6; 
@@ -184,7 +176,6 @@
             color: #93c5fd; 
         }
 
-        /* --- SVG --- */
         .visual-preview-section {
             background-color: #0d0d0d;
             display: flex;
@@ -239,17 +230,7 @@
 
             <div class="control-group">
                 <label for="material">Matériau</label>
-                <select id="material" oninput="checkMaterialRestrictions(); calculate()">
-                    <optgroup label="Métaux">
-                        <option value="alu6060">Alu 6060-T6 (E=79500 MPa, Rp0,2=140 MPa)</option>
-                        <option value="acier">Acier Standard (E=210000 MPa, Rp0,2=235 MPa)</option>
-                    </optgroup>
-                    <optgroup label="Bois">
-                        <option value="bois_c24">Bois Résineux C24 (E=11000 MPa, Rp0,2=24 MPa)</option>
-                        <option value="bois_gl24">Lamellé-Collé GL24 (E=11500 MPa, Rp0,2=24 MPa)</option>
-                        <option value="bois_d30">Bois Dur / Chêne D30 (E=12000 MPa, Rp0,2=30 MPa)</option>
-                    </optgroup>
-                </select>
+                <select id="material" onchange="checkMaterialRestrictions(); calculate()"></select>
             </div>
 
             <div class="control-group">
@@ -390,16 +371,37 @@
     </section>
 </div>
 
-<script>
-    const materials = {
-        alu6060: { E: 79500, Re: 140 },
-        acier: { E: 210000, Re: 235 },
-        bois_c24: { E: 11000, Re: 24 },
-        bois_gl24: { E: 11500, Re: 24 },
-        bois_d30: { E: 12000, Re: 30 }
-    };
+<script src="materiaux.js"></script>
 
-    // Synchronisation bidirectionnelle entre le champ numérique et le curseur
+<script>
+    // Chargement du menu depuis la baseDeDonneesMateriaux (qui se trouve dans materiaux.js)
+    function loadMaterialsMenu() {
+        let selectMenu = document.getElementById('material');
+        selectMenu.innerHTML = ''; 
+
+        // Trier et grouper les matériaux
+        let groupMetal = document.createElement('optgroup');
+        groupMetal.label = "Métaux";
+        let groupBois = document.createElement('optgroup');
+        groupBois.label = "Bois";
+
+        for (let key in baseDeDonneesMateriaux) {
+            let mat = baseDeDonneesMateriaux[key];
+            let opt = document.createElement('option');
+            opt.value = key;
+            opt.textContent = `${mat.name} (E=${mat.E}, Rp0.2=${mat.Re})`;
+            
+            if (mat.type === 'bois') {
+                groupBois.appendChild(opt);
+            } else {
+                groupMetal.appendChild(opt);
+            }
+        }
+        
+        if (groupMetal.children.length > 0) selectMenu.appendChild(groupMetal);
+        if (groupBois.children.length > 0) selectMenu.appendChild(groupBois);
+    }
+
     function sync(source, id) {
         let range = document.getElementById(id);
         let num = document.getElementById('num_' + id);
@@ -412,10 +414,10 @@
     }
 
     function checkMaterialRestrictions() {
-        let mat = document.getElementById('material').value;
+        let matKey = document.getElementById('material').value;
         let sectionTypeMenu = document.getElementById('section_type');
         
-        if (mat.includes('bois')) {
+        if (baseDeDonneesMateriaux[matKey] && baseDeDonneesMateriaux[matKey].type === 'bois') {
             sectionTypeMenu.value = 'pleine'; 
             sectionTypeMenu.disabled = true;  
         } else {
@@ -440,12 +442,13 @@
     }
 
     function calculate() {
-        let mat = document.getElementById('material').value;
-        let E = materials[mat].E;
-        let Re = materials[mat].Re;
+        let matKey = document.getElementById('material').value;
+        if (!baseDeDonneesMateriaux[matKey]) return; 
+
+        let E = baseDeDonneesMateriaux[matKey].E;
+        let Re = baseDeDonneesMateriaux[matKey].Re;
         let typeSection = document.getElementById('section_type').value;
 
-        // Lecture des valeurs depuis les champs de saisie (avec protection en cas de case vidée)
         let L = parseFloat(document.getElementById('num_L').value) || 0.1;
         let B = parseFloat(document.getElementById('num_B').value) || 0.1;
         let H = parseFloat(document.getElementById('num_H').value) || 0.1;
@@ -474,7 +477,6 @@
         let tau_c = (3 * P) / (2 * S);
         let tau_max = 0.35 * sigma_f + 0.65 * Math.sqrt(Math.pow(sigma_f, 2) + 4 * Math.pow(tau_c, 2));
 
-        // Affichage (arrondis et unités)
         document.getElementById('out_E').innerText = E + " MPa";
         document.getElementById('out_Re').innerText = Re + " MPa";
         document.getElementById('out_S').innerText = Math.round(S) + " mm²";
@@ -514,7 +516,6 @@
             });
         }
 
-        // --- Mise à jour SVG ---
         document.getElementById('label-force').textContent = `P = ${P} N`;
         document.getElementById('label-length').textContent = `L = ${L} mm`;
         
@@ -590,7 +591,7 @@
         document.getElementById('label-H').setAttribute('x', HVisRightX + 45);
     }
 
-    // Initialisation
+    loadMaterialsMenu();
     checkMaterialRestrictions();
     calculate();
 </script>
