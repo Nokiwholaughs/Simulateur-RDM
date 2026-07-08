@@ -200,7 +200,7 @@
 
             <div class="control-group">
                 <label for="material">Matériau</label>
-                <select id="material" oninput="calculate()">
+                <select id="material" oninput="checkMaterialRestrictions(); calculate()">
                     <optgroup label="Métaux">
                         <option value="alu6060">Alu 6060-T6 (E=79500 MPa, Rp0,2=140 MPa)</option>
                         <option value="acier">Acier Standard (E=210000 MPa, Rp0,2=235 MPa)</option>
@@ -344,7 +344,23 @@
         let suffix = (id === 'P') ? ' N' : ' mm';
         document.getElementById('val_' + id).innerText = document.getElementById(id).value + suffix;
     }
-
+    // Verrouille ou déverrouille le type de section selon le matériau
+    function checkMaterialRestrictions() {
+        let mat = document.getElementById('material').value;
+        let sectionTypeMenu = document.getElementById('section_type');
+        
+        // Si le matériau choisi contient le mot "bois"
+        if (mat.includes('bois')) {
+            sectionTypeMenu.value = 'pleine'; // Force le réglage sur "pleine"
+            sectionTypeMenu.disabled = true;  // Grise et verrouille le menu
+        } else {
+            sectionTypeMenu.disabled = false; // Déverrouille le menu pour les métaux
+        }
+        
+        // Met à jour l'affichage pour masquer l'épaisseur instantanément
+        toggleSection();
+    }
+    
     // Gère l'affichage du champ Épaisseur en fonction du type de géométrie
     function toggleSection() {
         let type = document.getElementById('section_type').value;
@@ -513,8 +529,8 @@
         document.getElementById('label-H').setAttribute('x', HVisRightX + 45);
     }
 
-    // Initialisation
-    toggleSection();
+    // Initialisation au chargement de la page
+    checkMaterialRestrictions();
     calculate();
 </script>
 <p>Created by Teddy Chouvet</p>
